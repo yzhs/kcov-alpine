@@ -1,0 +1,23 @@
+--- elfutils-0.168.orig/libdwfl/linux-kernel-modules.c
++++ elfutils-0.168/libdwfl/linux-kernel-modules.c
+@@ -69,6 +69,20 @@
+ #define	SECADDRDIRFMT	"/sys/module/%s/sections/"
+ #define MODULE_SECT_NAME_LEN 32	/* Minimum any linux/module.h has had.  */
+ 
++#if !defined(__GLIBC__)
++
++/* Evaluate EXPRESSION, and repeat as long as it returns -1 with `errno'
++   set to EINTR.  */
++
++# define TEMP_FAILURE_RETRY(expression) \
++  (__extension__                                                              \
++    ({ long int __result;                                                     \
++       do __result = (long int) (expression);                                 \
++       while (__result == -1L && errno == EINTR);                             \
++       __result; }))
++
++#endif
++
+ 
+ static const char *vmlinux_suffixes[] =
+   {
