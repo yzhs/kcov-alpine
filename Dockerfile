@@ -1,39 +1,57 @@
-FROM alpine:edge
+FROM alpine:edge as build
 
 RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
     apk update && \
-    apk add alpine-sdk binutils binutils-dev cmake curl-dev elfutils-dev g++ \
-            gcc ninja wget zlib-dev build-base bison flex-dev zlib-dev \
-            bzip2-dev xz-dev argp-standalone bsd-compat-headers autoconf \
-            automake libtool fts fts-dev musl-obstack-dev musl-obstack
+    apk add \
+        alpine-sdk \
+        argp-standalone \
+        autoconf \
+        automake \
+        binutils \
+        binutils-dev \
+        bison \
+        bsd-compat-headers \
+        build-base \
+        bzip2-dev \
+        cmake \
+        curl-dev \
+        elfutils-dev \
+        flex-dev \
+        fts \
+        fts-dev \
+        g++ \
+        gcc \
+        libtool \
+        musl-obstack \
+        musl-obstack-dev \
+        ninja \
+        python \
+        wget \
+        xz-dev \
+        zlib-dev
 
-ENV SRC_DIR=/home/kcov-src PKG_DIR=/home/guest/packages
+ENV SRC_DIR=/home/abuild PKG_DIR=/home/abuild/packages
 
-RUN mkdir -p $SRC_DIR/elfutils /home/guest; \
-    chown -R guest:root /home/guest; \
-    addgroup guest abuild; \
-    HOME=/home/guest sudo -Eu guest abuild-keygen -ai
+RUN adduser abuild -G abuild; \
+    mkdir -p $SRC_DIR/{elfutils,argp-standalone}; \
+    sudo -u abuild abuild-keygen -ai
 
 COPY elfutils/* $SRC_DIR/elfutils/
 COPY argp-standalone/* $SRC_DIR/argp-standalone/
 
-RUN cd $SRC_DIR; \
-    chown -R guest:root elfutils argp-standalone
-
 RUN cd $SRC_DIR/argp-standalone; \
-    HOME=/home/guest sudo -Eu guest abuild && \
+    chown -R abuild: $SRC_DIR; \
+    sudo -u abuild abuild && \
     apk add $PKG_DIR/*/*/argp*.apk --allow-untrusted && \
-    abuild-sign -k /home/guest/.abuild/*.rsa $PKG_DIR/*/*/APKINDEX.tar.gz; \
-    rm -r $PKG_DIR
+    abuild-sign -k /home/abuild/.abuild/*.rsa $PKG_DIR/*/*/APKINDEX.tar.gz; \
+    mv $PKG_DIR /home/abuild/argp
 RUN cd $SRC_DIR/elfutils; \
-    HOME=/home/guest sudo -Eu guest abuild && \
+    sudo -u abuild abuild && \
     apk add $PKG_DIR/*/*/elf*.apk --allow-untrusted
 
 RUN cd $SRC_DIR; \
     wget https://github.com/SimonKagstrom/kcov/archive/v36.tar.gz; \
     tar xf v36.tar.gz
-
-RUN apk add python
 
 RUN cd $SRC_DIR/kcov-36 && \
     mkdir build && \
@@ -42,6 +60,19 @@ RUN cd $SRC_DIR/kcov-36 && \
     ninja && \
     ninja install
 
-ENTRYPOINT ["kcov"]
-CMD ["--help"]
+FROM alpine:edge
+RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
+    apk update && \
+    apk add \
+        binutils \
+        curl \
+        flex \
+        fts \
+        musl-obstack
 
+COPY --from=build /home/abuild/argp/*/* /home/abuild/packages/*/* /home/
+COPY --from=build /usr/local/bin/kcov /usr/bin/kcov
+
+RUN apk add /home/*.apk --allow-untrusted
+
+ENTRYPOINT ["/usr/bin/kcov"]
