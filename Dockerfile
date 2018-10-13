@@ -7,7 +7,6 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
             argp-standalone \
             autoconf \
             automake \
-            binutils \
             binutils-dev \
             bison \
             bsd-compat-headers \
@@ -27,7 +26,6 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
             musl-obstack-dev \
             ninja \
             python \
-            wget \
             xz-dev \
             zlib-dev
 
@@ -72,10 +70,7 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
     apk update && \
     apk add --no-cache \
             binutils \
-            curl \
-            flex \
-            fts \
-            musl-obstack
+            curl
 
 COPY --from=build /home/abuild/argp/*/* /home/abuild/packages/*/* /home/
 COPY --from=build /usr/local/bin/kcov /usr/bin/kcov
