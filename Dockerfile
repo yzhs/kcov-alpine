@@ -55,18 +55,18 @@ WORKDIR $SRC_DIR/elfutils
 RUN su-exec abuild abuild && \
     apk add $PKG_DIR/*/*/elf*.apk --allow-untrusted
 
-WORKDIR $SRC_DIR
-RUN wget https://github.com/SimonKagstrom/kcov/archive/v36.tar.gz; \
-    tar xf v36.tar.gz
 
-WORKDIR $SRC_DIR/kcov-36
-RUN mkdir build && \
-    cd build && \
+WORKDIR $SRC_DIR
+RUN curl -L https://github.com/SimonKagstrom/kcov/archive/v$VERSION.tar.gz \
+    | tar xzC $SRC_DIR/ && \
+    mkdir kcov-$VERSION/build && \
+    cd kcov-$VERSION/build && \
     CXXFLAGS="-D__ptrace_request=int" cmake -G Ninja .. && \
     ninja && \
     ninja install
 
 
+# Build a small image containing just the obligatory parts.
 FROM alpine:edge
 RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
     apk update && \
