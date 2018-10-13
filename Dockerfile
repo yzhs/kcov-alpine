@@ -31,15 +31,17 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
             xz-dev \
             zlib-dev
 
-ENV SRC_DIR=/home/abuild PKG_DIR=/home/abuild/packages
-
+# abuild won't run as root, so we need to set up a user account.
 RUN adduser abuild -G abuild; \
-    mkdir -p $SRC_DIR/{elfutils,argp-standalone}; \
     su-exec abuild abuild-keygen -ai
+
+ENV VERSION=36 SRC_DIR=/home/abuild PKG_DIR=/home/abuild/packages
 
 COPY elfutils/* $SRC_DIR/elfutils/
 COPY argp-standalone/* $SRC_DIR/argp-standalone/
 
+# We need a version of argp-standalone compiled with -fPIC for buildign the
+# full elfutils project.
 WORKDIR $SRC_DIR/argp-standalone
 RUN chown -R abuild: $SRC_DIR; \
     su-exec abuild abuild && \
@@ -47,6 +49,8 @@ RUN chown -R abuild: $SRC_DIR; \
     abuild-sign -k /home/abuild/.abuild/*.rsa $PKG_DIR/*/*/APKINDEX.tar.gz; \
     mv $PKG_DIR /home/abuild/argp
 
+# The packaged version of elfutils does not include libdw which kcov links
+# against, so we have to build a custom version.
 WORKDIR $SRC_DIR/elfutils
 RUN su-exec abuild abuild && \
     apk add $PKG_DIR/*/*/elf*.apk --allow-untrusted
