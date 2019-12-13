@@ -1,4 +1,4 @@
-FROM alpine:edge as build
+FROM alpine:3.10 as build
 
 RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
     apk update && \
@@ -26,6 +26,7 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
             musl-obstack-dev \
             ninja \
             python \
+            python3 \
             xz-dev \
             zlib-dev
 
@@ -33,7 +34,7 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
 RUN adduser abuild -G abuild; \
     su-exec abuild abuild-keygen -ai
 
-ENV VERSION=36 SRC_DIR=/home/abuild PKG_DIR=/home/abuild/packages
+ENV VERSION=37 SRC_DIR=/home/abuild PKG_DIR=/home/abuild/packages
 
 COPY elfutils/* $SRC_DIR/elfutils/
 COPY argp-standalone/* $SRC_DIR/argp-standalone/
@@ -65,12 +66,10 @@ RUN curl -L https://github.com/SimonKagstrom/kcov/archive/v$VERSION.tar.gz \
 
 
 # Build a small image containing just the obligatory parts.
-FROM alpine:edge
-RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
-    apk update && \
-    apk add --no-cache \
-            binutils \
-            curl
+FROM alpine:3.10
+RUN apk add --no-cache \
+        binutils \
+        curl
 
 COPY --from=build /home/abuild/argp/*/* /home/abuild/packages/*/* /home/
 COPY --from=build /usr/local/bin/kcov /usr/bin/kcov
