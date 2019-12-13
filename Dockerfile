@@ -73,7 +73,3 @@ RUN apk add --no-cache \
 
 COPY --from=build /home/abuild/argp/*/* /home/abuild/packages/*/* /home/
 COPY --from=build /usr/local/bin/kcov /usr/bin/kcov
-
-RUN apk add /home/*.apk --allow-untrusted
-
-ENTRYPOINT ["/usr/bin/kcov"]
