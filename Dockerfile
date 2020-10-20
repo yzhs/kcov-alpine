@@ -1,4 +1,4 @@
-FROM alpine:3.10 as build
+FROM alpine:3.12 as build
 
 RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories && \
     apk update && \
@@ -25,7 +25,6 @@ RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositor
             musl-obstack \
             musl-obstack-dev \
             ninja \
-            python \
             python3 \
             xz-dev \
             zlib-dev
@@ -66,7 +65,7 @@ RUN curl -L https://github.com/SimonKagstrom/kcov/archive/v$VERSION.tar.gz \
 
 
 # Build a small image containing just the obligatory parts.
-FROM alpine:3.10
+FROM alpine:3.12
 RUN apk add --no-cache \
         binutils \
         curl
